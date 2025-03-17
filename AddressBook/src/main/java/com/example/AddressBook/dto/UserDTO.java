@@ -1,11 +1,10 @@
 package com.example.AddressBook.dto;
 
-import lombok.*;
+import lombok.Data;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class UserDTO {
     private String username;
+    private String email;
     private String password;
 }
