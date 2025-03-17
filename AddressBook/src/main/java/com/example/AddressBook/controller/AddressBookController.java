@@ -14,11 +14,13 @@ public class AddressBookController {
     @Autowired
     private AddressBookService service;
 
+    // Fetch all contacts
     @GetMapping
     public ResponseEntity<List<AddressBookDTO>> getAllContacts() {
         return ResponseEntity.ok(service.getAllContacts());
     }
 
+    // Add a new contact
     @PostMapping
     public ResponseEntity<AddressBookDTO> addContact(@RequestBody AddressBookDTO dto) {
         return ResponseEntity.ok(service.addContact(dto));

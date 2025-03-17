@@ -14,6 +14,7 @@ public class AddressBookService {
     @Autowired
     private AddressBookRepository repository;
 
+    // Fetch all contacts
     public List<AddressBookDTO> getAllContacts() {
         List<AddressBook> contacts = repository.findAll();
         return contacts.stream()
@@ -21,12 +22,24 @@ public class AddressBookService {
                 .collect(Collectors.toList());
     }
 
+    // Add a new contact
     public AddressBookDTO addContact(AddressBookDTO dto) {
+        AddressBook contact = convertDtoToModel(dto);
+        AddressBook savedContact = repository.save(contact);
+        return convertModelToDto(savedContact);
+    }
+
+    // Helper method to convert DTO to Model
+    private AddressBook convertDtoToModel(AddressBookDTO dto) {
         AddressBook contact = new AddressBook();
         contact.setName(dto.getName());
         contact.setEmail(dto.getEmail());
         contact.setPhoneNumber(dto.getPhoneNumber());
-        AddressBook savedContact = repository.save(contact);
-        return new AddressBookDTO(savedContact.getName(), savedContact.getEmail(), savedContact.getPhoneNumber());
+        return contact;
+    }
+
+    // Helper method to convert Model to DTO
+    private AddressBookDTO convertModelToDto(AddressBook contact) {
+        return new AddressBookDTO(contact.getName(), contact.getEmail(), contact.getPhoneNumber());
     }
 }
