@@ -1,26 +1,17 @@
 package com.example.AddressBook.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
 
 @Entity
-@Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String username;
-
-    @Column(nullable = false)
+    private String username;  // Keep this for login
+    private String email;     // Store actual email
     private String password;
-
-    @Column(nullable = false)
-    private String role; // ROLE_USER, ROLE_ADMIN
+    private String role;      // ROLE_USER, ROLE_ADMIN
 }
