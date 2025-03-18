@@ -2,6 +2,7 @@ package com.example.AddressBook.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,10 +18,12 @@ import java.util.Optional;
 public class AddressBookService {
 
     private final AddressBookRepository addressBookRepository;
+    private final RabbitTemplate rabbitTemplate;
     private static final Logger logger = LoggerFactory.getLogger(AddressBookService.class);
 
-    public AddressBookService(AddressBookRepository addressBookRepository) {
+    public AddressBookService(AddressBookRepository addressBookRepository,RabbitTemplate rabbitTemplate) {
         this.addressBookRepository = addressBookRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     // ✅ Get all contacts with Caching
