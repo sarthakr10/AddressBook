@@ -5,11 +5,11 @@ import lombok.*;
 
 import java.io.Serializable;
 
-@Entity
+@Entity  // ✅ JPA Entity for MySQL
 @Data  // ✅ Lombok generates Getters, Setters, toString, equals, and hashCode
 @NoArgsConstructor  // ✅ Generates a no-arg constructor
 @AllArgsConstructor  // ✅ Generates an all-args constructor
-public class AddressBook implements Serializable {  // Serializable for Redis
+public class AddressBook implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
