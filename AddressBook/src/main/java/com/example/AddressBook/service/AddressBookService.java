@@ -1,72 +1,75 @@
 package com.example.AddressBook.service;
 
-import com.example.AddressBook.dto.AddressBookDTO;
-import com.example.AddressBook.model.AddressBook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
+import org.springframework.transaction.annotation.Transactional;
+import com.example.AddressBook.model.AddressBook;
+import com.example.AddressBook.repository.AddressBookRepository;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class AddressBookService {
-    private final List<AddressBook> addressBookList = new ArrayList<>();
-    private Long idCounter = 1L; // Change int to Long
 
-    // Fetch all contacts
-    public List<AddressBookDTO> getAllContacts() {
-        List<AddressBookDTO> dtos = new ArrayList<>();
-        for (AddressBook contact : addressBookList) {
-            dtos.add(convertModelToDto(contact));
-        }
-        return dtos;
+    private final AddressBookRepository addressBookRepository;
+    private static final Logger logger = LoggerFactory.getLogger(AddressBookService.class);
+
+    public AddressBookService(AddressBookRepository addressBookRepository) {
+        this.addressBookRepository = addressBookRepository;
     }
 
-    // Fetch a contact by ID
-    public Optional<AddressBookDTO> getContactById(Long id) { // Change int to Long
-        return addressBookList.stream()
-                .filter(contact -> contact.getId().equals(id)) // Use equals() for Long comparison
-                .findFirst()
-                .map(this::convertModelToDto);
+    // ✅ Get all contacts with Caching
+    @Cacheable(value = "contacts", key = "'allContacts'")
+    public List<AddressBook> getAllContacts() {
+        logger.info("Fetching contacts from Database (Not Cached)");
+        return addressBookRepository.findAll();
+
     }
 
-    // Add a new contact
-    public AddressBookDTO addContact(AddressBookDTO dto) {
-        AddressBook contact = convertDtoToModel(dto);
-        contact.setId(idCounter++); // Assign unique ID (Long)
-        addressBookList.add(contact);
-        return convertModelToDto(contact);
+    // ✅ Get a specific contact by ID (Cached)
+    @Cacheable(value = "contacts", key = "#id")
+    public Optional<AddressBook> getContactById(Long id) {
+        logger.info("Fetching contact {} from Database (Not Cached)", id);
+        return addressBookRepository.findById(id);
     }
 
-    // Update contact by ID
-    public Optional<AddressBookDTO> updateContact(Long id, AddressBookDTO dto) { // Change int to Long
-        for (AddressBook contact : addressBookList) {
-            if (contact.getId().equals(id)) { // Use equals() for Long comparison
-                contact.setName(dto.getName());
-                contact.setEmail(dto.getEmail());
-                contact.setPhoneNumber(dto.getPhoneNumber());
-                return Optional.of(convertModelToDto(contact));
-            }
-        }
-        return Optional.empty();
+    // ✅ Add new contact (Evicts Cache)
+    @CacheEvict(value = "contacts", allEntries = true)
+    public AddressBook addContact(AddressBook contact) {
+        logger.info("Adding new contact {} - Evicting Cache", contact.getName());
+        return addressBookRepository.save(contact);
     }
 
-    // Delete contact by ID
-    public boolean deleteContact(Long id) { // Change int to Long
-        return addressBookList.removeIf(contact -> contact.getId().equals(id)); // Use equals() for Long comparison
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "contacts", key = "'allContacts'"),  // Evict all contacts cache
+            @CacheEvict(value = "contacts", key = "#id")  // Evict updated contact cache
+    })
+    @CachePut(value = "contacts", key = "#id")  // Update Redis with new contact data
+    public AddressBook updateContact(Long id, AddressBook updatedContact) {
+        logger.info("Updating contact {} - Updating Cache", id);
+        return addressBookRepository.findById(id)
+                .map(contact -> {
+                    contact.setName(updatedContact.getName());
+                    contact.setPhone(updatedContact.getPhone());
+                    return addressBookRepository.save(contact);
+                }).orElseThrow(() -> new RuntimeException("Contact not found with id: " + id));
     }
 
-    // Helper method to convert DTO to Model
-    private AddressBook convertDtoToModel(AddressBookDTO dto) {
-        AddressBook contact = new AddressBook();
-        contact.setName(dto.getName());
-        contact.setEmail(dto.getEmail());
-        contact.setPhoneNumber(dto.getPhoneNumber());
-        return contact;
+
+
+    @Caching(evict = {
+            @CacheEvict(value = "contacts", key = "'allContacts'"),  // Evict all contacts cache
+            @CacheEvict(value = "contacts", key = "#id")  // Remove deleted contact cache
+    })
+    public void deleteContact(Long id) {
+        logger.info("Deleting contact {} - Evicting Cache", id);
+        addressBookRepository.deleteById(id);
     }
 
-    // Helper method to convert Model to DTO
-    private AddressBookDTO convertModelToDto(AddressBook contact) {
-        return new AddressBookDTO(contact.getName(), contact.getEmail(), contact.getPhoneNumber());
-    }
 }

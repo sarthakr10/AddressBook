@@ -16,7 +16,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // ✅ Updated CSRF Configuration
                 .authorizeHttpRequests(auth -> auth // ✅ Updated Authorization
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**","/h2-console","/api/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(httpBasic -> httpBasic.disable()); // ✅ Updated Basic Auth
