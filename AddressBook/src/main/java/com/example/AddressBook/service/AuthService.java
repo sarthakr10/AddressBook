@@ -13,14 +13,16 @@ public class AuthService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService; // ✅ Inject EmailService
 
-    public AuthService(UserRepository userRepository, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, JwtUtil jwtUtil, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.jwtUtil = jwtUtil;
+        this.emailService = emailService;
     }
 
-    // ✅ User Registration
+    // ✅ User Registration (Now sends Welcome Email)
     public String registerUser(String username, String email, String password) {
         if (userRepository.findByUsername(username).isPresent()) {
             return "Username already exists!";
@@ -36,6 +38,10 @@ public class AuthService {
         user.setRole("ROLE_USER");
 
         userRepository.save(user);
+
+        // ✅ Send Welcome Email
+        emailService.sendWelcomeEmail(email);
+
         return "User registered successfully!";
     }
 
@@ -48,7 +54,7 @@ public class AuthService {
         return "Invalid Credentials";
     }
 
-    // ✅ Forgot Password: Generate Reset Token
+    // ✅ Forgot Password: Generate Reset Token & Send Email
     public String forgotPassword(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -56,9 +62,9 @@ public class AuthService {
         }
 
         String resetToken = UUID.randomUUID().toString();
-        // Store resetToken in DB (or use Redis)
-        // Simulate email sending (log message)
-        System.out.println("Password reset token: " + resetToken);
+
+        // ✅ Send Password Reset Email
+        emailService.sendPasswordResetEmail(email, resetToken);
 
         return "Password reset link sent to your email!";
     }
